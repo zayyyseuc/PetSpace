@@ -1,76 +1,74 @@
-# PetSpace
-An Environment-Responsive Robotic Interaction System
+# Pet Space - Environment-Responsive Robotic Desk Lamp
 
-The Pet Space project is an interactive remote pet monitoring and companionship system designed to alleviate occupational burnout. By sensing a pet's presence and activity in a space, it provides remote users with a low-interference channel for emotional connection, reducing the sense of disconnection commonly experienced during long work hours.
+Pet Space is an interactive remote pet monitoring and companionship system. It utilizes non-intrusive sensing technologies to alleviate occupational burnout by providing users with a real-time emotional connection to their pets through movement data, audio interaction, and historical activity analysis.
 
 ---
 
 ## System Architecture
 
-The system is composed of three primary functional modules: detection nodes, a central server, and a mobile terminal.
+The system operates across three hardware tiers and a Python-based data processing backend:
 
-### 1. Detection Device Node
-
-* Utilizes an ESP32-C3 microcontroller to integrate HC-SR501 infrared sensors and LD2420 radar sensors.
-* Detects the presence, distance, and angle of a pet in real-time.
-* Transmits sensor data to the central server using the ESP-NOW protocol.
-* Includes an I2S audio playback module to play WAV files from a Micro SD card upon receiving remote commands.
-
-### 2. Central Server (Gateway)
-
-* Acts as a communication bridge, receiving local data from detection nodes via ESP-NOW.
-* Connects to a WiFi network and uploads formatted JSON data to a cloud broker using MQTT over a secure SSL/TLS connection.
-* Maintains a registry of node IDs and their corresponding MAC addresses for targeted command forwarding.
-
-### 3. Portable Mobile Terminal
-
-* Equipped with a TJC serial port screen for real-time status display and user interaction.
-* Visualizes the pet's current location, distance, and activity status.
-* Allows users to select specific nodes and audio clips to trigger remote playback.
-
----
-
-## Hardware Components
-
-| Module | Component | Purpose |
-| --- | --- | --- |
-| **Main Controller** | ESP32-C3 (AiM2M CORE) | Core logic and wireless communication |
-| **Motion Detection** | LD2420 Radar & HC-SR501 PIR | Dual-sensor verification for presence detection |
-| **Audio Output** | MAX98357A I2S Amp & 3W Speaker | Remote voice interaction and sound playback |
-| **User Interface** | TJC Serial Port Display | Information display and command input |
-| **Feedback Lighting** | WS2812B LEDs (FastLED) | Visual response based on pet activity |
-| **External Storage** | Micro SD Card | Storage for WAV audio resources |
+1. **Detection Device Nodes**: ESP32-C3 units that combine LD2420 radar and HC-SR501 PIR sensors to detect pet presence, distance, and angle.
+2. **Central Server (Gateway)**: An ESP32-C3 that bridges the local ESP-NOW sensor network to the internet via MQTT over SSL/TLS.
+3. **Portable Mobile Terminal**: A handheld device with a TJC serial screen for real-time visualization and remote audio triggering.
+4. **Python Backend**: A dual-script suite for persistent data logging and advanced trajectory visualization.
 
 ---
 
 ## Software Implementation
 
-### Communication Protocols
+### 1. Hardware Firmware (C++/Arduino)
 
-* **Local Network**: ESP-NOW is used for low-latency communication between detection nodes and the gateway.
-* **Cloud Connectivity**: MQTT (via PubSubClient) manages upstream data publishing and downstream command subscription.
+* **ESP-NOW**: Used for low-latency, low-power communication between sensor nodes and the gateway.
+* **MQTT**: Gateway publishes node status to `home/catTracker` and subscribes to `home/catCommand` for remote interactions.
 
-### Data Management
+### 2. Python Data Suite
 
-* **Upstream Topic**: `home/catTracker` - Gateway publishes JSON arrays containing node IDs, room names, distances, and detection flags.
-* **Downstream Topic**: `home/catCommand` - Mobile terminal publishes commands to trigger audio on specific nodes.
-* **Python Integration**: While the core system runs on C++, Python is utilized for historical data analysis and generating activity trajectory graphs to check for pet health abnormalities.
+The repository includes two specialized Python scripts to handle the cloud-side data lifecycle:
+
+* **`real-time-acquisition.py`**: A persistent MQTT subscriber that connects to the broker, parses incoming JSON payloads from the Central Server, and logs pet activity (timestamp, room, distance, detection status) into a local CSV database.
+* **`track-visualization.py`**: An analysis tool that reads the logged historical data to generate pet activity route graphs. It maps categorical room data to numerical values to visualize movement patterns and identify behavioral abnormalities.
 
 ---
 
-## Quick Setup
+## Installation and Setup
 
-### Node Configuration
+### Hardware Setup
 
-1. Define a unique `NODE_ID` and `ROOM_NAME` for each detection node.
-2. Set the `gatewayMac` to match the MAC address of your Central Server.
+1. Flash the detection node firmware to the ESP32-C3, ensuring unique `NODE_ID` and `ROOM_NAME` values are assigned.
+2. Flash the Central Server firmware with valid WiFi and MQTT credentials.
 
-### Gateway Configuration
+### Python Environment
 
-1. Enter your WiFi `ssid` and `password`.
-2. Provide the MQTT server address and ensure the `root_ca` SSL certificate is correctly formatted for the secure broker.
+Ensure you have Python 3.x installed along with the necessary libraries:
 
-### Terminal Operation
+```bash
+pip install paho-mqtt pandas matplotlib
 
-1. Power on the mobile terminal to automatically subscribe to node updates.
-2. Use the touch interface to send `PlayCommand` structures to specific nodes.
+```
+
+### Running the Data Pipeline
+
+1. **Start Data Collection**: Run the acquisition script to begin logging MQTT traffic:
+```bash
+python real-time-acquisition.py
+
+```
+
+
+2. **Generate Reports**: Once sufficient data is collected, run the visualization script to view the pet's activity route:
+```bash
+python track-visualization.py
+
+```
+
+
+
+---
+
+## Hardware Specifications
+
+* **Microcontroller**: ESP32-C3.
+* **Sensors**: LD2420 Millimeter-wave Radar, HC-SR501 PIR.
+* **Audio**: MAX98357A I2S Amplifier with 3W Speaker.
+* **Display**: TJC Serial Port Screen.
