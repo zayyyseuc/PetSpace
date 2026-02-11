@@ -1,4 +1,4 @@
-# Pet Space - Environment-Responsive Robotic Desk Lamp
+# Pet Space - An Environment-Responsive Robotic Interaction System
 
 Pet Space is an interactive remote pet monitoring and companionship system. It utilizes non-intrusive sensing technologies to alleviate occupational burnout by providing users with a real-time emotional connection to their pets through movement data, audio interaction, and historical activity analysis.
 
